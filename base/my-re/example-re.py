@@ -8,6 +8,20 @@
 # 正则表达式
 import re  # 正则表达式模块
 
+'''
+正则表达式并非一个python独有的功能，java、c、JavaScript等高级语言都有正则表达式。其主要作用是按照一定规则匹配或检测字符串。
+数字 \d
+非数字 \D
+数字|字母|中文 \w
+非数字&非字母，如空格，逗号，分号等 \W
+[]精准匹配
++ 至少一个
+* 任意个，可以没有
+| 或者
+{}范围，{0,10}0到10个，{3}3个
+()分组
+'''
+
 
 def test_time(time_str):
     '''
@@ -53,3 +67,5 @@ def nonGreedy(some_str):
 
 
 print(nonGreedy('1212300').groups())
+
+print(re.search('\W+', ' ， ；'))
