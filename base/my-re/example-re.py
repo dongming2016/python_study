@@ -68,4 +68,5 @@ def nonGreedy(some_str):
 
 print(nonGreedy('1212300').groups())
 
-print(re.search('\W+', ' ， ；'))
+print(re.search(r'\W+', ' ， ；'))
+print(re.match(r'[0|1|2]+', '2123'))
