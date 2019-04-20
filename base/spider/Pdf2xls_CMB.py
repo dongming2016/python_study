@@ -1,11 +1,14 @@
+import sys
+# print(sys.path)
+# sys.path.append('')
 import pdfplumber
 import re
 import os
 from datetime import datetime
 
 # 基础设置
-base_path = input('请输入你所处理的文件路径：')
-output_path = base_path
+# base_path = input('请输入你所处理的文件路径：')
+# output_path = base_path
 # Number = int(input('请输入您想要处理的文件数量：'))
 leaf_path = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
 # Number = 10
@@ -179,7 +182,7 @@ def handle_type1(types, result, content_template):
     return result
 
 def handle_rate(rates, results, content_template):
-    # print(rates)
+    print(rates)
     if not rates:
         return
     # [销售 | 托管 | 管理]
@@ -187,9 +190,11 @@ def handle_rate(rates, results, content_template):
     # items1 = ['销售费率', '托管费率']
     # count = 0
     for rate in rates[0]:
+        # print(rate)
         if rate:
             # print('cccccccccccccccccccccccccccccddddddd', rate)
             sale = re.findall(r'销售\w*\W*(\d+.\d+%/年)', rate)
+            print(sale)
             if sale:
                 results['销售费率'] = sale[0]
             else:
@@ -217,7 +222,7 @@ def transform_data(file_paths, Number):
     get_scale = get_data_by_template('发行规模', r'(\d+.*元\w+)|每期上限(\d+.*\w+)人民币|上限\W*(\d+\W*\w{1})', handle_scale)
     get_rate = get_data_by_template('费用', r'\W*([销售|托管|管理]\w*\W*\d+.\d+%/年)\S+\n*.*?\W*([销售|托管|管理]'
                                           r'\w*\W*\d+.\d+%/年)\S+\n*.*?\W*([销售|托管|管理]\w*\W*\d+.\d+%/年)|'
-                                          r'\W*([销售|托管|管理]\w*\W*\d+.\d+%)/年\S+\n*.*?\W*([销售|托管|管理]\w*\W*\d+.\d+%)/年', handle_rate)
+                                          r'\W*([销售|托管|管理]\w*\W*\d+.\d+%/年)\S+\n*.*?\W*([销售|托管|管理]\w*\W*\d+.\d+%/年)', handle_rate)
     get_interest_rate1 = get_data_by_template(r'本金及利息|业绩比较基准', r'\d+.\d+%|d+.\d+%-d+.\d+%', handle_interest)
     get_cast_assess = get_data_by_template(r'挂钩标的')
     get_type = get_data_by_template('类型', None, handle_type1)
@@ -233,7 +238,7 @@ def transform_data(file_paths, Number):
             # print(file_NO, Number)
             break
 
-        # print('================================handling the (%s)th file' % file_NO)
+        print('==================handling the (%s)th file==============' % file_NO)
         try:
             print('-----------------handling file: %s ---- %s-------------------- ' % file_path)
         except UnicodeEncodeError as e:
@@ -276,7 +281,8 @@ def pdf2xls(file_path, out_put_path,  Number):
     write_excel(datas, out_put_path + '/out_put')
 
 
-
 if __name__ =='__main__':
+    base_path = input('请输入你所处理的文件路径：')
+    output_path = base_path
     Number = int(input('请输入文件数目：'))
     pdf2xls(base_path, output_path, Number)

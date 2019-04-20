@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import os
 import math
+import Pdf2xls_CMB
 import sys
 # sys.path.append('C:\\it\\example\\python_study')
 # print(sys.path)
@@ -178,5 +179,5 @@ def get_all_files(url, record_num):
 
 if __name__ == '__main__':
     get_all_files(index_url.replace('page_NO', '1'), record_num)
-    # print(out_put_path)
-    # Pdf2xls_CMB.pdf2xls(base_path, out_put_path, record_num)
+    print(base_path)
+    Pdf2xls_CMB.pdf2xls(base_path, base_path, record_num)
