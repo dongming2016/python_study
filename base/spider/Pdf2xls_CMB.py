@@ -182,14 +182,29 @@ def handle_rate(rates, results, content_template):
     # print(rates)
     if not rates:
         return
-    items = ['销售费率', '托管费率', '固定投资管理费率']
-    count = 0
+    # [销售 | 托管 | 管理]
+    items = ['销售', '托管', '管理']
+    # items1 = ['销售费率', '托管费率']
+    # count = 0
     for rate in rates[0]:
         if rate:
             # print('cccccccccccccccccccccccccccccddddddd', rate)
-            results[items[count]] = rate
-        count += 1
-    # return results
+            sale = re.findall(r'销售\w*\W*(\d+.\d+%/年)', rate)
+            if sale:
+                results['销售费率'] = sale[0]
+            else:
+                delegate = re.findall(r'托管\w*\W*(\d+.\d+%/年)', rate)
+                if delegate:
+                    results['托管费率'] = delegate[0]
+                else:
+                    manage = re.findall(r'管理\w*\W*(\d+.\d+%/年)', rate)
+                    if manage:
+                        results['固定投资管理费率'] = manage[0]
+
+
+            # results[items[count]] = rate
+        # count += 1
+    return results
 
 
 # 获取数据
@@ -200,7 +215,9 @@ def transform_data(file_paths, Number):
     get_limit = get_data_by_template('理财计划期限|存款期限', r'\d+\W*天')
     get_subscription_periode = get_data_by_template('认购期',r'(\d*\W*年\W*\d*\W*月\W*\d*\W*日)\W*\d*:\d*\W*[至|到](\W*\d*\W*年\W*\d*\W*月\W*\d*\W*日)\W*\d*:\d*', handle_date)
     get_scale = get_data_by_template('发行规模', r'(\d+.*元\w+)|每期上限(\d+.*\w+)人民币|上限\W*(\d+\W*\w{1})', handle_scale)
-    get_rate = get_data_by_template('费用', r'\W*(\d+.\d+%)/年\S+\n*.*?\W*(\d+.\d+%)/年|\W*(\d+.\d+%)/年\S+\n*.*?\W*(\d+.\d+%)/年\S+\n*.*?\W*(\d+.\d+%)/年', handle_rate)
+    get_rate = get_data_by_template('费用', r'\W*([销售|托管|管理]\w*\W*\d+.\d+%/年)\S+\n*.*?\W*([销售|托管|管理]'
+                                          r'\w*\W*\d+.\d+%/年)\S+\n*.*?\W*([销售|托管|管理]\w*\W*\d+.\d+%/年)|'
+                                          r'\W*([销售|托管|管理]\w*\W*\d+.\d+%)/年\S+\n*.*?\W*([销售|托管|管理]\w*\W*\d+.\d+%)/年', handle_rate)
     get_interest_rate1 = get_data_by_template(r'本金及利息|业绩比较基准', r'\d+.\d+%|d+.\d+%-d+.\d+%', handle_interest)
     get_cast_assess = get_data_by_template(r'挂钩标的')
     get_type = get_data_by_template('类型', None, handle_type1)
