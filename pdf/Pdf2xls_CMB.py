@@ -6,6 +6,7 @@ import pdfplumber
 import re
 import os
 from datetime import datetime
+# import logging
 
 # 基础设置
 base_path = 'D:\\bank\\CMB\\2019-04-02-23-01-47'

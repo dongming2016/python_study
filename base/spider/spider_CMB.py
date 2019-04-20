@@ -86,7 +86,7 @@ def get_files(a_tags, get_success_num, get_fail_num):
             continue
 
         req = requests.get(ss)
-        print(req)
+        # print(req)
         # print(ProdName)
         try:
             with open(base_path + '/' + ProdName, 'wb') as pdf:
@@ -112,7 +112,7 @@ def get_current_page(rows, get_all_num, get_success_num, get_fail_num, record_nu
         all_num = get_all_num()
         if all_num > record_num:
             break
-        print('getting %sth file' % all_num)
+        # print('getting %sth file' % all_num)
         print('getting file of %s, the (%d)th' % (row, all_num))
         get_product(row, get_success_num, get_fail_num)
         # return print_num
@@ -133,20 +133,20 @@ def get_product(ProductNo='', get_success_num=None, get_fail_num=None):
 
 
 def remove_par(html):
-    print(html.encode('utf8'))
+    # print(html.encode('utf8'))
     if str(html).startswith('('):
         html = str(html).replace('(', '', 1)
-    print(html)
+    # print(html)
     if str(html).endswith(')'):
         html = html[::-1].replace(')', '', 1)[::-1]
     return html
 
 
 def get_all_files(url, record_num):
-    html = get_html(url)
+    # html = get_html(url)
 
   # print(html)
-    table_data = remove_par(html)
+  #   table_data = remove_par(html)
     # table_data = json.loads(html)
     # print(table_data['Data']['Table'])
     # rows = table_data['Data']['Table']
@@ -157,19 +157,19 @@ def get_all_files(url, record_num):
     get_success_num = count_num()
     get_all_num = count_num()
     for page in range(int(page_num)):
-        print(index_url.replace('page_NO', str(page + 1)))
+        # print(index_url.replace('page_NO', str(page + 1)))
         print('page NO ==========================', page + 1)
         # print_num += PAGE_SIZE
         html = get_html(index_url.replace('page_NO', str(page + 1)))
-        table_data = table_data = remove_par(html)
+        table_data = remove_par(html)
         # table_data = json.loads(str(html))['Data']
         # print(table_data['Table'])
         result = re.findall(r'PrdCode:"(\w+)"', table_data)
-        print(result)
+        # print(result)
         get_current_page(result, get_all_num, get_success_num, get_fail_num, record_num)
     succes_num = get_success_num() - 1
     fail_num = get_fail_num() - 1
-    all_file_num = get_all_num() - 2
+    all_file_num = get_all_num() - 1
     print('the number of success files: %s' % succes_num)
     print('the number of failed files: %s' % fail_num)
     print('the number of all files: %s' % all_file_num)

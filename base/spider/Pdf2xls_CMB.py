@@ -19,7 +19,7 @@ colums = {
     '认购期': '产品期限(天）',
     '发行规模': '计划募集规模（亿）',
     '认购起点|起存金额':'认购起点（万）',
-    '本金及利息':'业绩基准（预期收益率）',
+    '本金及利息|业绩比较基准':'业绩基准（预期收益率）',
     '销售费率': '销售费率',
     '托管费率': '托管费率',
     '认购费': '认购费',
@@ -44,8 +44,6 @@ def create_dir(file_path):
 # 根据模板获取数据
 def get_data_by_template(template, content_template=None, handler=None, td_num = 1):
     def get_data(tr, result):
-        # print(template, td_num)
-        # print('asdfffffffffff==', template)
         if tr[0] and re.search(template, tr[0].replace('\n', '')):
             if content_template == None:
                 if handler:
@@ -56,8 +54,8 @@ def get_data_by_template(template, content_template=None, handler=None, td_num =
                 result[template] = tr[td_num].replace('\n', '')
                 return result[template]
             else:
-                if td_num > len(tr) and tr[td_num]:
-                    print(content_template, tr[td_num])
+                if tr[td_num]:
+                    # print(content_template, tr[td_num])
                     if handler:
                         handler(re.findall(content_template, tr[td_num].replace('\n', '')), result, template)
                         return re.findall(content_template, tr[td_num].replace('\n', ''))
@@ -132,18 +130,18 @@ def handle_start_point(start_points, result, content_template):
 
 
 def handle_date(dates, result, content_template):
-    print(dates)
+    # print(dates)
     if not dates:
         return
     # print('+++++++++++++++++++++++++++++++++', dates)
     result[content_template] = dates[0][1].replace(' ', '') + '-' + dates[0][1].replace(' ', '')
-    print(result[content_template])
+    # print(result[content_template])
     # print('cccccccccccccccccccccccccccccddddddd', result)
     # return result
 
 
 def handle_interest(interests, result, content_template):
-    print(interests)
+    # print(interests)
     if not interests:
         return
     result[content_template] = interests[0] + '/' + interests[1]
@@ -153,7 +151,7 @@ def handle_interest(interests, result, content_template):
 
 
 def handle_scale(scales, result, content_template):
-    print(scales)
+    # print(scales)
     if not scales:
         return
     for scale in scales[0]:
@@ -166,20 +164,22 @@ def handle_scale(scales, result, content_template):
 
 
 def handle_type(types, result, content_template):
+    # print('================types:',types)
     if not types:
         return
-    # for type in types:
-    #     if type:
     result['名称'] = types.replace('\n', '')
     if re.findall(r'结构性存款|非保本理财计划', types):
         result['类型'] = re.findall(r'结构性存款|非保本理财计划', types)[0]
-    # result[content_template] = type
-    # print('cccccccccccccccccccccccccccccddddddd', result)
     return result
-    # return result
+
+def handle_type1(types, result, content_template):
+    # print('================= geta type =================', types)
+    if not result.get('类型'):
+        result['类型'] = types
+    return result
 
 def handle_rate(rates, results, content_template):
-    print(rates)
+    # print(rates)
     if not rates:
         return
     items = ['销售费率', '托管费率', '固定投资管理费率']
@@ -196,15 +196,15 @@ def handle_rate(rates, results, content_template):
 def transform_data(file_paths, Number):
     get_name = get_data_by_template('名称', None, handle_type)
     # get_start_point = get_data_by_template('认购起点', '(\d+).*1\W*份.*认购起点份额为.*?(\d+\W*万)份')
-    get_start_point = get_data_by_template('认购起点|起存金额', '须为.*?(\d+\W*万)份|认购起点份额为.*?(\d+\W*万)份|(\d+\W*万)元', handle_start_point)
+    get_start_point = get_data_by_template('认购起点|起存金额', r'须为.*?(\d+\W*万)份|认购起点份额为.*?(\d+\W*万)份|(\d+\W*万)元|最低份额为\W*(\d+\W*\w+)份', handle_start_point)
     get_limit = get_data_by_template('理财计划期限|存款期限', r'\d+\W*天')
-    get_subscription_periode = get_data_by_template('认购期',r'(\d*\W*年\W*\d*\W*月\W*\d*\W*日)\W*\d*:\d*\W*至(\W*\d*\W*年\W*\d*\W*月\W*\d*\W*日)\W*\d*:\d*', handle_date)
-    get_scale = get_data_by_template('发行规模', r'(\d+.*元\w+)|每期上限(\d+.*\w+)人民币', handle_scale)
+    get_subscription_periode = get_data_by_template('认购期',r'(\d*\W*年\W*\d*\W*月\W*\d*\W*日)\W*\d*:\d*\W*[至|到](\W*\d*\W*年\W*\d*\W*月\W*\d*\W*日)\W*\d*:\d*', handle_date)
+    get_scale = get_data_by_template('发行规模', r'(\d+.*元\w+)|每期上限(\d+.*\w+)人民币|上限\W*(\d+\W*\w{1})', handle_scale)
     get_rate = get_data_by_template('费用', r'\W*(\d+.\d+%)/年\S+\n*.*?\W*(\d+.\d+%)/年|\W*(\d+.\d+%)/年\S+\n*.*?\W*(\d+.\d+%)/年\S+\n*.*?\W*(\d+.\d+%)/年', handle_rate)
-    get_interest_rate1 = get_data_by_template(r'本金及利息', r'\d+.\d+%', handle_interest)
+    get_interest_rate1 = get_data_by_template(r'本金及利息|业绩比较基准', r'\d+.\d+%|d+.\d+%-d+.\d+%', handle_interest)
     get_cast_assess = get_data_by_template(r'挂钩标的')
-    # get_type = get_data_by_template('类型', '结构性存款|非保本理财计划', handle_type)
-    get_methods = [get_name, get_start_point, get_limit, get_subscription_periode, get_scale, get_rate, get_interest_rate1, get_cast_assess]
+    get_type = get_data_by_template('类型', None, handle_type1)
+    get_methods = [get_name, get_start_point, get_limit, get_subscription_periode, get_scale, get_rate, get_interest_rate1, get_cast_assess, get_type]
     # get_interest_rate2 = get_data_by_template(r'理财计划于第%w+个自动终止清算日自动终止', r'\d+.\d+%')
     final_data = []
     file_NO = 0
@@ -228,16 +228,18 @@ def transform_data(file_paths, Number):
                     for tab in page.extract_tables():
                         # print(tab)
                         for td in tab:
-                            print(td)
+                            # print(td)
                             td_count = -1
                             # print('===========================result', results)
                             for method in get_methods:
+                                # print(method)
                                 result =method(td, results)
                                 # print('+++++++++++++++++++++++result++++++++++++++++++++', results)
                                 # print('+++++++++++++++++++++++result', file_path, td_count)
                                 td_count += 1
+                                # print(result)
                                 if result != '':
-                                    # results[td_count] = result
+                                    results[td_count] = result
                                     # print('+++++++++++++++++++++++result', file_path, td_count)
                                     # print('====================results', file_path, results)
                                     break
