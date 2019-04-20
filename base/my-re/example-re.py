@@ -32,6 +32,14 @@ def test_time(time_str):
     :param time_str:  被检测的字符串
     :return:  返回匹配结果
     '''
+    # match三个参数，patter正则表达式， string表示要匹配的字符串， flags 用于控制正则表达式的匹配方式
+    # 正则表达式的匹配方式：re.l匹配对大小写不敏感 re.L 做本地化识别匹配
+    # re.M 多行匹配，影响^和$
+    # re.S 使.匹配包括换行在内的所有字符
+    # re.U 根据Unicode字符集解析字符，影响\w,\W,\b,\B
+    # 匹配成功，返回一个匹配对象，否则返回None
+    # group(num),num可以是多个，表示
+    # groups返回一个包含所有小组字符串的元组
     return re.match(r'^(0[0-9]|1[0-9]|2[0-3]|[0-9])\:'  # 时
                     r'(0[0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9]|[0-9])\:'  # 分
                     r'((0[0-9]|1[0-9]|2[0-9]|3[0-9]|4[0-9]|5[0-9]|[0-9])$)', time_str)  #
@@ -51,6 +59,7 @@ def splitStr(someStr):
     :param someStr:
     :return:
     '''
+
     return re.split(r'[ |,|;]', someStr)
 
 

@@ -7,7 +7,6 @@
 import requests
 from bs4 import BeautifulSoup
 import os
-import time, threading
 base_path = 'c:/bank'
 
 def create_dir(file_path):
