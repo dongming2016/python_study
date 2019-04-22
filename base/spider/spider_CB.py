@@ -7,11 +7,19 @@
 import requests
 from bs4 import BeautifulSoup
 import os
-base_path = 'c:/bank'
+from datetime import datetime
+import My_Logger
+
+leaf_path = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+root_logger = My_Logger.Logger('root', r'中国银行_爬虫_log.log')
+file_patition = input('请输入你想存入的磁盘分区,如c，则输入c, 默认c盘:')
+if not file_patition:
+    file_patition = 'c'
+base_path = '%s:/bank/CB/%s' % (file_patition, leaf_path)
 
 def create_dir(file_path):
     if not os.path.exists(base_path):
-        os.mkdir(base_path)
+        os.makedirs(base_path)
         return True
     else:
         print('路径已存在')
@@ -32,11 +40,11 @@ def get_files(html):
     for item in a_tags:
         href = item.get('href')
         ss = href.split(r'/')
-        print(ss[len(ss) - 1])
+        root_logger.debug(ss[len(ss) - 1])
         file_name = ss[len(ss) - 1]
         title = item.get_text()
-        print(href)
-        print(title)
+        root_logger.debug(href)
+        root_logger.debug(title)
         req = requests.get(href)
         with open(base_path + '/' + file_name, 'wb') as pdf:
             pdf.write(req.content)
@@ -47,7 +55,7 @@ def get_next_url(html):
 def get_total_page_num(html):
     return html.select('.turn_page p span')[0].get_text()
 
-def get_all_files(url):
+def get_all_files(url, Number):
     html = get_html(url)
     # print(html.encode('utf-8'))
     total_page_num = get_total_page_num(html)
@@ -56,16 +64,18 @@ def get_all_files(url):
     page_num = 0
     get_files(html)
     while True:
-        page_num += 1
-        print(url.replace('.html', '') + '_' + str(page_num) + '.html')
-        new_url = url.replace('.html', '') + '_' + str(page_num) + '.html'
-        print(new_url)
-        get_files(get_html(new_url))
-
-        if page_num > int(total_page_num):
+        # print("=====================================================", page_num, Number)
+        if page_num > int(total_page_num) or page_num >= Number - 1:
             break
+        page_num += 1
+        root_logger.debug(url.replace('.html', '') + '_' + str(page_num) + '.html')
+        new_url = url.replace('.html', '') + '_' + str(page_num) + '.html'
+        root_logger.debug(new_url)
+        get_files(get_html(new_url))
     # print(next_url)
 
 
 if __name__ == '__main__':
-    get_all_files('http://www.boc.cn/fimarkets/cs8/fd6/index.html')
+    print('==========================================欢迎使用中国银行爬虫小程序！=========================================')
+    Number = int(input('请输入【页面】数目：'))
+    get_all_files('http://www.boc.cn/fimarkets/cs8/fd6/index.html', Number)

@@ -1,17 +1,15 @@
 import sys
-# print(sys.path)
 # sys.path.append('')
 import pdfplumber
 import re
 import os
 from datetime import datetime
-
-# 基础设置
-# base_path = input('请输入你所处理的文件路径：')
-# output_path = base_path
-# Number = int(input('请输入您想要处理的文件数量：'))
+import ExcelWriter
+import My_Logger
+import logging
+import types
 leaf_path = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-# Number = 10
+root_logger = My_Logger.Logger('cmb_transform', r'CMB_transform_log.log')
 
 
 colums = {
@@ -32,6 +30,7 @@ colums = {
     '估值方法': '估值方法',
     '风险等级': '风险等级',
     '客户类型': '客户类型',
+    '原始数据': '原始数据'
 }
 
 n = 1
@@ -41,7 +40,6 @@ def create_dir(file_path):
         os.makedirs(file_path)
         return True
     else:
-        # print('路径已存在')
         return False
 
 # 根据模板获取数据
@@ -50,28 +48,25 @@ def get_data_by_template(template, content_template=None, handler=None, td_num =
         if tr[0] and re.search(template, tr[0].replace('\n', '')):
             if content_template == None:
                 if handler:
-                    handler(tr[td_num].replace('\n', ''), result, template)
-                    # print('cccccccccccccccccccccccccccccddddddd',result)
+                    handler(tr[td_num].replace('\n', ''), result, template,tr[td_num].replace('\n', ''))
                     return result[template]
-                # print('cccccccccccccccccccccccccccccddddddd', result)
                 result[template] = tr[td_num].replace('\n', '')
                 return result[template]
             else:
                 if tr[td_num]:
-                    # print(content_template, tr[td_num])
                     if handler:
-                        handler(re.findall(content_template, tr[td_num].replace('\n', '')), result, template)
+                        handler(re.findall(content_template, tr[td_num].replace('\n', '')), result, template, tr[td_num].replace('\n', ''))
                         return re.findall(content_template, tr[td_num].replace('\n', ''))
 
                     result[template] = re.findall(content_template, tr[td_num].replace('\n', ''))[0]
                     return result[template]
                 else:
                     # 获取某个字段失败
-                    # print('getting %s failed of file %s' % (template, file))
+                    root_logger.warning('getting %s failed' % template)
                     return ''
         else:
             # 获取某个字段失败
-            # print('getting %s failed of file %s' % (template, file))
+
             return ''
     return get_data
 
@@ -97,34 +92,36 @@ def get_files_path(file_path, file_reg = ''):
     files_name = os.listdir(file_path)
     file_paths = [(file_path + '/' + file, file)for file in files_name if file.endswith('.pdf')]
     file_paths.sort(key=compare, reverse=True)
-    print(file_paths)
+    # print(file_paths)
     return file_paths
 
 # 向excel中写文件
 # 后面可以借助工具包来实现
 def write_excel(data, output_path):
     create_dir(output_path)
-    output = open(output_path + '/bank_output_(%s).xls' % leaf_path, 'w', encoding='utf8')
-    print('文件路径：' + output_path + '/bank_output_(%s).xls' % leaf_path )
-    # final_table = [['a', 'b'], ['c', 'd']]
-    for colum in colums.values():
-        output.write(colum)
-        output.write('\t')
-    output.write('\n')
-    for column1 in data:
-        for item in colums.keys():
-            v = column1.get(item, '')
-            # print(v)
-            # if column[item]:
-            output.write(v)
-            # else:
-            output.write('\t')
-        output.write('\n')
-    output.close()
+    # output = open(output_path + '/bank_output_(%s).xls' % leaf_path, 'w', encoding='utf8')
+    # print('文件路径：' + output_path + '/bank_output_(%s).xls' % leaf_path )
+    # print(data)
+    # # final_table = [['a', 'b'], ['c', 'd']]
+    # for colum in colums.values():
+    #     output.write(colum)
+    #     output.write('\t')
+    # output.write('\n')
+    # for column1 in data:
+    #     for item in colums.keys():
+    #         v = column1.get(item, '')
+    #         # print(v)
+    #         # if column[item]:
+    #         output.write(v)
+    #         # else:
+    #         output.write('\t')
+    #     output.write('\n')
+    # output.close()
+    ExcelWriter.write_single_excel(output_path + '/招商银行_(%s).xls' % leaf_path, '招商银行', data, colums)
     print('================================OK!!!==============================')
 
 
-def handle_start_point(start_points, result, content_template):
+def handle_start_point(start_points, result, content_template, content):
     if not start_points:
         return
     for start_point in start_points[0]:
@@ -132,42 +129,32 @@ def handle_start_point(start_points, result, content_template):
             result[content_template] = start_point
 
 
-def handle_date(dates, result, content_template):
-    # print(dates)
+def handle_date(dates, result, content_template, content):
     if not dates:
         return
-    # print('+++++++++++++++++++++++++++++++++', dates)
     result[content_template] = dates[0][1].replace(' ', '') + '-' + dates[0][1].replace(' ', '')
-    # print(result[content_template])
-    # print('cccccccccccccccccccccccccccccddddddd', result)
     # return result
 
 
-def handle_interest(interests, result, content_template):
-    # print(interests)
+def handle_interest(interests, result, content_template, content):
     if not interests:
         return
     result[content_template] = interests[0] + '/' + interests[1]
-    # print('cccccccccccccccccccccccccccccddddddd', result)
-    # return result
+    return result
 
 
 
-def handle_scale(scales, result, content_template):
-    # print(scales)
+def handle_scale(scales, result, content_template, content):
     if not scales:
         return
     for scale in scales[0]:
         if scale:
-            # print('cccccccccccccccccccccccccccccddddddd',scale)
             result[content_template] = scale
-            # print('cccccccccccccccccccccccccccccddddddd', result)
             return result[content_template]
     # return result
 
 
-def handle_type(types, result, content_template):
-    # print('================types:',types)
+def handle_type(types, result, content_template, content):
     if not types:
         return
     result['名称'] = types.replace('\n', '')
@@ -175,26 +162,21 @@ def handle_type(types, result, content_template):
         result['类型'] = re.findall(r'结构性存款|非保本理财计划', types)[0]
     return result
 
-def handle_type1(types, result, content_template):
+def handle_type1(types, result, content_template, content):
     # print('================= geta type =================', types)
     if not result.get('类型'):
         result['类型'] = types
     return result
 
-def handle_rate(rates, results, content_template):
-    print(rates)
+def handle_rate(rates, results, content_template, content):
     if not rates:
         return
-    # [销售 | 托管 | 管理]
     items = ['销售', '托管', '管理']
-    # items1 = ['销售费率', '托管费率']
     # count = 0
     for rate in rates[0]:
-        # print(rate)
         if rate:
-            # print('cccccccccccccccccccccccccccccddddddd', rate)
             sale = re.findall(r'销售\w*\W*(\d+.\d+%/年)', rate)
-            print(sale)
+            # print(sale)
             if sale:
                 results['销售费率'] = sale[0]
             else:
@@ -206,16 +188,12 @@ def handle_rate(rates, results, content_template):
                     if manage:
                         results['固定投资管理费率'] = manage[0]
 
-
-            # results[items[count]] = rate
-        # count += 1
     return results
 
 
 # 获取数据
 def transform_data(file_paths, Number):
     get_name = get_data_by_template('名称', None, handle_type)
-    # get_start_point = get_data_by_template('认购起点', '(\d+).*1\W*份.*认购起点份额为.*?(\d+\W*万)份')
     get_start_point = get_data_by_template('认购起点|起存金额', r'须为.*?(\d+\W*万)份|认购起点份额为.*?(\d+\W*万)份|(\d+\W*万)元|最低份额为\W*(\d+\W*\w+)份', handle_start_point)
     get_limit = get_data_by_template('理财计划期限|存款期限', r'\d+\W*天')
     get_subscription_periode = get_data_by_template('认购期',r'(\d*\W*年\W*\d*\W*月\W*\d*\W*日)\W*\d*:\d*\W*[至|到](\W*\d*\W*年\W*\d*\W*月\W*\d*\W*日)\W*\d*:\d*', handle_date)
@@ -227,8 +205,6 @@ def transform_data(file_paths, Number):
     get_cast_assess = get_data_by_template(r'挂钩标的')
     get_type = get_data_by_template('类型', None, handle_type1)
     get_methods = [get_name, get_start_point, get_limit, get_subscription_periode, get_scale, get_rate, get_interest_rate1, get_cast_assess, get_type]
-    # get_interest_rate2 = get_data_by_template(r'理财计划于第%w+个自动终止清算日自动终止', r'\d+.\d+%')
-    final_data = []
     file_NO = 0
     final_table = []
     # file_count = 0
@@ -240,33 +216,30 @@ def transform_data(file_paths, Number):
 
         print('==================handling the (%s)th file==============' % file_NO)
         try:
-            print('-----------------handling file: %s ---- %s-------------------- ' % file_path)
+            root_logger.debug('-----------------handling file: %s ---- %s-------------------- ' % file_path)
         except UnicodeEncodeError as e:
-            print('UnicodeEncodeError', e)
+            root_logger.error('UnicodeEncodeError', e)
         with pdfplumber.open(file_path[0]) as pdf:
-                results = {'1': '=hyperlink("%s","%s")' % (file_path[0], file_path[1])}
+                results = {'1': 'hyperlink("%s","%s")' % (file_path[0], file_path[1])}
                 final_table.append(results)
+                result1 = ''
                 for page in pdf.pages:
                     for tab in page.extract_tables():
-                        # print(tab)
+                        result1 += '('
                         for td in tab:
-                            # print(td)
                             td_count = -1
-                            # print('===========================result', results)
                             for method in get_methods:
-                                # print(method)
                                 result =method(td, results)
-                                # print('+++++++++++++++++++++++result++++++++++++++++++++', results)
-                                # print('+++++++++++++++++++++++result', file_path, td_count)
+                                for t in td:
+                                    if type(t) == type('a') :
+                                        result1 += t
                                 td_count += 1
-                                # print(result)
                                 if result != '':
                                     results[td_count] = result
-                                    # print('+++++++++++++++++++++++result', file_path, td_count)
-                                    # print('====================results', file_path, results)
                                     break
-                            # print('+++++++++++++++++++++++++++', [get_name(td, file_path[0]), get_start_point(td, file_path[0]), get_limit(td, file_path[0]),
-                            #        get_subscription_periode(td, file_path[0]), get_scale(td, file_path[0]), get_rate(td, file_path[0]), get_interest_rate1(td, file_path[0])])
+                        result1 += ');'
+                        results.setdefault('原始数据', result1)
+
     return final_table
 
 # 文件主入口
@@ -274,7 +247,6 @@ def pdf2xls(file_path, out_put_path,  Number):
     # create_dir(out_put_path + '/out_put')
     # 首先读取所有文件
     files_path = get_files_path(file_path)
-    # print(file_path)
     # 其次将文件转化为想要的数据结构
     datas = transform_data(files_path,  Number)
     # 最后写入excel中
